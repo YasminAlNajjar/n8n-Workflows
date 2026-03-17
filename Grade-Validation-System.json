@@ -1,0 +1,184 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "GPT-5.1"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=ANALYZE THIS STUDENT'S GRADES:\n\nStudent:  (ID: )\nGrades: Q1=, Q2=, Q3=, Q4=, Mid=, Final=\n\nCHECK THESE LIMITS:\n- Each Quiz ≤ 10\n- Midterm ≤ 20\n- Final Exam ≤ 60\n\nIF ALL GRADES ARE VALID → Return: \"PASS\"\nIF ANY GRADE IS INVALID → Return JSON with:\n{\n  \"Student name\": \"\",\n  \"Student ID\": \"\",\n  \"hasError\": true,\n  \"invalidGrades\": [\"Quiz1: 11 > 10\", \"Final: 65 > 60\"],\n  \"originalData\": [object Object]\n}\n\nRespond with ONLY \"PASS\" or the JSON above.\n"
+            },
+            {}
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        224,
+        1120
+      ],
+      "id": "9b004b86-1564-443d-8820-9ef4ad55e87f",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "bBMOrAcfahPvD8Kf",
+          "name": "OpenAi account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst inputData = $input.all();\n\nconst problemStudents = [];\n\ninputData.forEach(item => {\n  const data = item.json;\n  \n  // تجاهل PASS\n  if (data === \"PASS\" || (typeof data === 'string' && data.trim() === \"PASS\")) {\n    return;\n  }\n  \n  // استخراج معلومات الطالب\n  const studentInfo = getStudentInfo(data);\n  if (studentInfo) {\n    problemStudents.push(studentInfo);\n  }\n});\n\n// بناء الرسالة البسيطة\nif (problemStudents.length > 0) {\n  let message = \"🚨 GRADING ISSUES REQUIRING REVIEW\n\n\";\n  message += \"📋 Students Requiring Attention:\n\n\";\n  \n  problemStudents.forEach((student, index) => {\n    message += `${index + 1}. ${student.name} (Student ID: ${student.id})\n`;\n  });\n  \n  message += `\n📊 Summary:\n`;\n  message += `• Total Students: ${inputData.length}\n`;\n  message += `• Students with Issues: ${problemStudents.length}\n`;\n  message += `• Time: ${new Date().toLocaleString('en-US')}\n\n`;\n  message += `📍 Required Actions:\n`;\n  message += `1. Review the students listed above\n`;\n  message += `2. Check their grades in the system\n`;\n  message += `3. Correct any invalid values\n\n`;\n  message += `────────────────────\n`;\n  message += `Automated Grading System`;\n  \n  return [{\n    json: {\n      chatId: \"@teacher_channel\",\n      text: message,\n      parse_mode: \"HTML\"\n    }\n  }];\n} else {\n  return [{\n    json: {\n      chatId: \"@teacher_channel\",\n      text: \"✅ ALL STUDENTS PASSED VALIDATION\n\nNo issues detected.\",\n      parse_mode: \"HTML\"\n    }\n  }];\n}\n\n// دالة استخراج معلومات الطالب فقط\nfunction getStudentInfo(data) {\n  const str = typeof data === 'string' ? data : JSON.stringify(data);\n  \n  // تنظيف النص\n  const clean = str.replace(/\\n/g, ' ').replace(/\\\"/g, '\"');\n  \n  // البحث عن الاسم والرقم فقط\n  const nameMatch = clean.match(/\"Student name\"\s*:\s*\"([^\"]+)\"/);\n  const idMatch = clean.match(/\"Student ID\"\s*:\s*\"([^\"]+)\"/);\n  \n  if (nameMatch && idMatch) {\n    return {\n      name: nameMatch[1],\n      id: idMatch[1]\n    };\n  }\n  \n  return null;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        1120
+      ],
+      "id": "c9417528-77e9-48b3-8f5d-1767d0a98687",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "sendTo": "y3sm2004@gmail.com",
+        "subject": "test",
+        "emailType": "text",
+        "message": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        1120
+      ],
+      "id": "3d89e1bc-e582-4199-85f8-5ba5dfae0bb5",
+      "name": "Send a message",
+      "webhookId": "4dd47d22-af3f-441c-a222-51a4c4e26ee5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Hv2y3GmZsP3bAxvF",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "test",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        1120
+      ],
+      "id": "b5fef8f2-299f-4677-ad32-8aacfcb05865",
+      "name": "Webhook1",
+      "webhookId": "728a88dc-bee2-415a-9ed8-d4d93dd80db0"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "= ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        992,
+        1120
+      ],
+      "id": "a2301954-5aec-4cad-859b-31ba1b3f7a08",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "data0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1120
+      ],
+      "id": "2fc74457-dbe5-4acd-a097-d13ca2104eb4",
+      "name": "Extract from File3"
+    }
+  ],
+  "connections": {
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File3": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c5e80d4bea99b4d287a0eb1019706bbbc1346e82dd0e3697c3a949cbc018efa"
+  }
+}
