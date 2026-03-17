@@ -1,0 +1,193 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -400,
+        -32
+      ],
+      "id": "4f81e249-e6b0-4472-b0b7-69b33dee7c83",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cards = $input.all().map(i => i.json);\nconst today = new Date();\n\nconst done = cards.filter(c => c.dueComplete);\nconst overdue = cards.filter(c => !c.dueComplete && c.due && new Date(c.due) < today);\nconst inProgress = cards.filter(c => !c.dueComplete && (!c.due || new Date(c.due) >= today));\n\nconst format = list => list.length\n  ? list.map(c => `• ${c.name}`).join('\n')\n  : '• لا يوجد';\n\nconst message = `\n📋 تقرير المهام اليومي\n📅 ${today.toLocaleDateString('ar')}\n─────────────────\n✅ مكتملة (${done.length})\n${format(done)}\n\n⏳ قيد التنفيذ (${inProgress.length})\n${format(inProgress)}\n\n🔴 متأخرة (${overdue.length})\n${format(overdue)}\n\n─────────────────\n📊 الإجمالي: ${cards.length} مهام\n`.trim();\n\nreturn { json: { message } };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -32
+      ],
+      "id": "1c2bac39-99bd-4bc8-83cd-b27bcb47426a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "board",
+        "operation": "get",
+        "id": {
+          "__rl": true,
+          "value": "69b7f2b3012f2db37d1aae45",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://trello.com/b/P3MXdQM1/n8n"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -32
+      ],
+      "id": "f6148710-8cbc-43e1-9fff-5d32943647d0",
+      "name": "Get a board",
+      "credentials": {
+        "trelloApi": {
+          "id": "FmpaLLNzezP98OGt",
+          "name": "Trello account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "list",
+        "operation": "getAll",
+        "id": "=",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -32
+      ],
+      "id": "22774a55-9644-4b3b-b08b-eb1e9fbab190",
+      "name": "Get many lists",
+      "credentials": {
+        "trelloApi": {
+          "id": "FmpaLLNzezP98OGt",
+          "name": "Trello account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "list",
+        "operation": "getCards",
+        "id": "=",
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -32
+      ],
+      "id": "ed2efa1d-3e1f-4822-8df8-8803e0ac19a4",
+      "name": "Get all cards in a list",
+      "credentials": {
+        "trelloApi": {
+          "id": "FmpaLLNzezP98OGt",
+          "name": "Trello account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1949255563",
+        "text": "=",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        -32
+      ],
+      "id": "ff43646a-70a4-4723-97bd-77aa8b3524e7",
+      "name": "Send a text message",
+      "webhookId": "c5f02cf5-4c4a-45cf-b93a-2f092827700e",
+      "credentials": {
+        "telegramApi": {
+          "id": "kFZ4TzYRSqHv7HUS",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a board",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a board": {
+      "main": [
+        [
+          {
+            "node": "Get many lists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many lists": {
+      "main": [
+        [
+          {
+            "node": "Get all cards in a list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all cards in a list": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c5e80d4bea99b4d287a0eb1019706bbbc1346e82dd0e3697c3a949cbc018efa"
+  }
+}
